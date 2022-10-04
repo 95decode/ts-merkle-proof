@@ -1,0 +1,22 @@
+{
+  "name": "ts-merkle-proof",
+  "version": "1.0.0",
+  "description": "ts-merkle-proof",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/95decode/ts-merkle-proof.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/95decode/ts-merkle-proof/issues"
+  },
+  "homepage": "https://github.com/95decode/ts-merkle-proof#readme",
+  "dependencies": {
+    "ts-node": "^10.9.1"
+  }
+}
