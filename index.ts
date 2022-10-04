@@ -2,34 +2,32 @@ import keccak256 from 'keccak256'
 import MerkleTree from './merkletree';
 import { parse } from 'csv';
 import * as fs from "fs";
+import BigNumber from 'bignumber.js';
 
 let foo = fs.readFileSync('./sample.csv');
-//let bar = Buffer.from(foo).toString();
 
 parse(foo, {delimiter: ','}, (err, data) => {
     if(err) {
         return
     }
 
-    for(let i=0; i<data.length; i++){
-        console.log(data[i]);
-/*
-        console.log(zeroPadding(i.toString(16)));
-        console.log(data[i][0].replace('0x', ''));
-        console.log(zeroPadding(parseInt(data[i][1]).toString(16)));
-*/
-
-        //BN 으로 바꿔야함
-        let raw = zeroPadding(i.toString(16)) + data[i][0].replace('0x', '') + zeroPadding(parseInt(data[i][1]).toString(16));
-        console.log(data[i][1]);
-        console.log(zeroPadding(parseInt(data[i][1]).toString(16)));
-        //console.log(keccak256(Buffer.from(raw, 'hex')).toString('hex'));
+    for(let i = 0; i < data.length; i++){
+        const idx = i.toString(16);
+        const address = data[i][0].replace('0x', '');
+        const amount = BigNumber(data[i][1]).toString(16);
+        // raw : (idx, address, amount)
+        let raw = zeroPadding(idx) + address + zeroPadding(amount);
+        // leaf : keccak256(raw)
+        let leaf = '0x' + (keccak256(Buffer.from(raw, 'hex')).toString('hex'));
+        console.log(leaf);
     }
 })
 
 function zeroPadding(num: string) {
+    const zero32 = '0000000000000000000000000000000000000000000000000000000000000000'
+
     if(num.length < 64) {
-        return num = ('0000000000000000000000000000000000000000000000000000000000000000' + num).slice(-64);
+        return num = (zero32 + num).slice(-64);
     } else return num;
 }
 
