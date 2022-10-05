@@ -1,53 +1,73 @@
 import { parse } from 'csv';
 import BigNumber from 'bignumber.js';
-import keccak256 from 'keccak256'
+import keccak256 from 'keccak256';
 
 export class MerkleTree {
     private leaves: string[] = [];
-    private layer: Array<string[]> = [];
+    private root: string = "";
+    private layers: Array<string[]> = [];
+    private treeObj: object = {};
 
     constructor(_leaves: string[]) {
         this.leaves = _leaves;
-
-        this.layer.push(this.leaves)
+        this.layers.push(this.leaves);
+        this.calculateLayer(this.leaves);
     }
 
-    public getleaves() {
-        console.log(this.leaves);
-    }
-
-    public getRoot() {
-        if(!this.leaves.length) return;
-
-        this.recur(this.leaves);
-
-        console.log(this.layer);
-    }
-
-    private recur(data: string[]) {
-        if(!data.length) return;
+    private calculateLayer(currentLayer: string[]) {
+        if(!currentLayer.length) return;
         
         let nextLayer: string[] = [];
 
-        for(let i=0; i<data.length; i++) {
-            if(i+1 == data.length) {
-                nextLayer.push(data[i]);
+        for(let i = 0; i < currentLayer.length; i++) {
+            if(i+1 == currentLayer.length) {
+                nextLayer.push(currentLayer[i]);
                 break;
             }
-
-            // i, i+1 연산 함
-            let raw = [data[i], data[i+1]];
-            raw.sort()
-            nextLayer.push(keccak256(Buffer.from(raw[0]+raw[1], 'hex')).toString('hex'));
-            i++
+            let raw = [currentLayer[i], currentLayer[i + 1]].sort();
+            nextLayer.push(keccak256(Buffer.from(raw[0] + raw[1], 'hex')).toString('hex'));
+            i++;
         }
-        this.layer.push(nextLayer);
+        this.layers.push(nextLayer);
 
         if(nextLayer.length != 1) {
-            this.recur(nextLayer)
-        } else {
-            console.log(nextLayer);
-        };
+            this.calculateLayer(nextLayer);
+        } else this.root = nextLayer[0];
+    }
+
+    verify(proof: string[], root: string, leaf: string): boolean {
+        let nextHash = leaf;
+        for(let i = 0; i < proof.length; i++) {
+            let raw = [nextHash, proof[i]].sort();
+            nextHash = keccak256(Buffer.from(raw[0] + raw[1], 'hex')).toString('hex');
+        }
+        return nextHash == root ? true : false;
+    }
+
+    getProof(leaf: string[]): string[]{
+        // leaf 포함 확인
+
+        let proof: string[] = [];
+
+        // proof 연산
+
+        return proof;
+    }
+
+    getTree() {
+        // Layer를 tree 형태로 바꾸기
+    }
+
+    getLeaves(): string[] {
+        return this.leaves;
+    }
+
+    getRoot(): string {
+        return this.root;
+    }
+
+    getLayers(): Array<string[]> {
+        return this.layers;
     }
 }
 
@@ -55,7 +75,7 @@ export function csvToLeaves(csvData: Buffer): Promise<string[]> {
     return new Promise(resolve => {
         parse(csvData, {delimiter: ','}, (err, data) => {
             if(err) return;
-            let leaves: string[] = []
+            let leaves: string[] = [];
             for(let i = 0; i < data.length; i++){
                 const idx = i.toString(16);
                 const address = data[i][0].replace('0x', '');

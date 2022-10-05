@@ -7,10 +7,9 @@ let sampleCsv = fs.readFileSync('./sample.csv');
     let leaves = await csvToLeaves(sampleCsv);
 
     let bar = new MerkleTree(leaves);
-    //bar.getleaves();
-    //bar.getRoot();
-
-    bar.getRoot();
+    console.log("leaves :", bar.getLeaves());
+    console.log("root :", bar.getRoot());
+    console.log("layers :", bar.getLayers());
 })()
 
 
