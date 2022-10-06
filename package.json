@@ -17,9 +17,11 @@
   },
   "homepage": "https://github.com/95decode/ts-merkle-proof#readme",
   "dependencies": {
+    "@types/treeify": "^1.0.0",
     "bignumber.js": "^9.1.0",
     "csv": "^6.2.0",
     "keccak256": "^1.0.6",
+    "treeify": "^1.1.0",
     "ts-node": "^10.9.1"
   }
 }

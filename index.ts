@@ -1,5 +1,6 @@
-import {MerkleTree, csvToLeaves} from './merkletree';
+import { MerkleTree, csvToLeaves } from './merkletree';
 import * as fs from "fs";
+import * as treeify from "treeify";
 
 let sampleCsv = fs.readFileSync('./sample.csv');
 
@@ -11,5 +12,14 @@ let sampleCsv = fs.readFileSync('./sample.csv');
     console.log("root :", bar.getRoot());
     console.log("layers :", bar.getLayers());
 })()
+
+let foo: treeify.TreeObject = {
+    "root" : {
+        "bar": "baz",
+        "bar2": "baz2"
+    }
+}
+
+console.log(treeify.asTree(foo, false, false));
 
 

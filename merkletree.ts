@@ -1,12 +1,13 @@
 import { parse } from 'csv';
 import BigNumber from 'bignumber.js';
 import keccak256 from 'keccak256';
+import * as treeify from "treeify";
 
 export class MerkleTree {
     private leaves: string[] = [];
     private root: string = "";
     private layers: Array<string[]> = [];
-    private treeObj: object = {};
+    private treeObj: treeify.TreeObject = {};
 
     constructor(_leaves: string[]) {
         this.leaves = _leaves;
