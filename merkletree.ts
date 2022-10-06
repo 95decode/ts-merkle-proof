@@ -7,33 +7,48 @@ export class MerkleTree {
     private leaves: string[] = [];
     private root: string = "";
     private layers: Array<string[]> = [];
+    private leavesObj: Array<treeify.TreeObject> = [];
     private treeObj: treeify.TreeObject = {};
 
     constructor(_leaves: string[]) {
         this.leaves = _leaves;
+        this.leavesObj = this.leaves.map((key): treeify.TreeObject => {
+            let obj: treeify.TreeObject = {};
+            obj[key] = "leaf";
+            return obj;
+        });
         this.layers.push(this.leaves);
-        this.calculateLayer(this.leaves);
+        this.calculateLayer(this.leaves, this.leavesObj);
     }
 
-    private calculateLayer(currentLayer: string[]) {
+    private calculateLayer(currentLayer: string[], currentLayerObj: Array<treeify.TreeObject>) {
         if(!currentLayer.length) return;
         
         let nextLayer: string[] = [];
+        let nextLayerObj: Array<treeify.TreeObject> = [];
 
         for(let i = 0; i < currentLayer.length; i++) {
             if(i+1 == currentLayer.length) {
                 nextLayer.push(currentLayer[i]);
+                nextLayerObj.push(currentLayerObj[i]);
                 break;
             }
             let raw = [currentLayer[i], currentLayer[i + 1]].sort();
-            nextLayer.push(keccak256(Buffer.from(raw[0] + raw[1], 'hex')).toString('hex'));
+            let parent = keccak256(Buffer.from(raw[0] + raw[1], 'hex')).toString('hex');
+            let parentObj: treeify.TreeObject = {};
+            parentObj[parent] = Object.assign(currentLayerObj[i], currentLayerObj[i+1]);
+            nextLayer.push(parent);
+            nextLayerObj.push(parentObj);
             i++;
         }
         this.layers.push(nextLayer);
 
         if(nextLayer.length != 1) {
-            this.calculateLayer(nextLayer);
-        } else this.root = nextLayer[0];
+            this.calculateLayer(nextLayer, nextLayerObj);
+        } else {
+            this.root = nextLayer[0]
+            this.treeObj = nextLayerObj[0];
+        };
     }
 
     verify(proof: string[], root: string, leaf: string): boolean {
@@ -55,8 +70,8 @@ export class MerkleTree {
         return proof;
     }
 
-    getTree() {
-        // Layer를 tree 형태로 바꾸기
+    getTree(): string {
+        return treeify.asTree(this.treeObj, false, false);
     }
 
     getLeaves(): string[] {
