@@ -60,12 +60,31 @@ export class MerkleTree {
         return nextHash == root ? true : false;
     }
 
-    getProof(leaf: string[]): string[]{
-        // leaf 포함 확인
+    getProof(leaf: string): string[] {
+        let tmp = this.leaves.indexOf(leaf);
+
+        if(tmp == -1) return [];
 
         let proof: string[] = [];
 
-        // proof 연산
+        for(let i = 0; i < this.layers.length; i++) {
+            console.log(tmp);
+            // tmp 짝수 and 마지막
+            if(tmp == this.layers[i].length - 1) {
+
+            } else {
+                
+                if(tmp % 2 == 0) {
+                    // tmp 짝수
+                    proof.push(this.layers[i][tmp + 1]);
+                } else {
+                    // tmp 홀수
+                    proof.push(this.layers[i][tmp - 1]);
+                }
+            }
+
+            tmp = (tmp - tmp%2)/2 + tmp%2;
+        }
 
         return proof;
     }
