@@ -21,6 +21,9 @@ export class MerkleTree {
         this.calculateLayer(this.leaves, this.leavesObj);
     }
 
+    /**
+     * @description Calculate merkle tree's layer using recursive function
+     */
     private calculateLayer(currentLayer: string[], currentLayerObj: Array<treeify.TreeObject>) {
         if(!currentLayer.length) return;
         
@@ -51,61 +54,89 @@ export class MerkleTree {
         };
     }
 
+    /**
+     * @description Calculate merkle proof using recursive function
+     */
+    private calculateProof(hash: string, layer: number, proof: string[]) {
+        let length = this.layers[layer].length;
+        if(length == 1) return proof;
+
+        let idx = this.layers[layer].indexOf(hash);
+        if(idx == -1) return [];
+
+        if(length % 2 && idx == length - 1) {
+            layer++
+            proof = this.calculateProof(hash, layer, proof);
+        } else {
+            const neighborIdx = idx % 2 ? idx - 1 : idx + 1;
+            proof.push(this.layers[layer][neighborIdx]);
+            let raw = [this.layers[layer][idx], this.layers[layer][neighborIdx]].sort();
+            let nextHash = keccak256(Buffer.from(raw[0] + raw[1], 'hex')).toString('hex');
+            layer++
+            proof = this.calculateProof(nextHash, layer, proof);
+        }
+        return proof;
+    }
+
+    /**
+     * @param proof Merkle proof
+     * @param root Merkle root
+     * @param leaf 1 of Merkle tree's leaves
+     * @returns bool
+     */
     verify(proof: string[], root: string, leaf: string): boolean {
         let nextHash = leaf;
         for(let i = 0; i < proof.length; i++) {
+            // openzeppelin's merkle proof library need pair sort
             let raw = [nextHash, proof[i]].sort();
             nextHash = keccak256(Buffer.from(raw[0] + raw[1], 'hex')).toString('hex');
         }
         return nextHash == root ? true : false;
     }
 
+    /**
+     * @param leaf 1 of Merkle tree's leaves
+     * @returns Merkle proof as array of keccak256 hashes string
+     */
     getProof(leaf: string): string[] {
-        let tmp = this.leaves.indexOf(leaf);
-
-        if(tmp == -1) return [];
-
         let proof: string[] = [];
-
-        for(let i = 0; i < this.layers.length; i++) {
-            console.log(tmp);
-            // tmp 짝수 and 마지막
-            if(tmp == this.layers[i].length - 1) {
-
-            } else {
-                
-                if(tmp % 2 == 0) {
-                    // tmp 짝수
-                    proof.push(this.layers[i][tmp + 1]);
-                } else {
-                    // tmp 홀수
-                    proof.push(this.layers[i][tmp - 1]);
-                }
-            }
-
-            tmp = (tmp - tmp%2)/2 + tmp%2;
-        }
-
+        proof = this.calculateProof(leaf, 0, proof);
         return proof;
     }
 
+    /**
+     * @returns Merkle tree string using treeify
+     */
     getTree(): string {
         return treeify.asTree(this.treeObj, false, false);
     }
 
+    /**
+     * @returns Merkle tree's leaves
+     */
     getLeaves(): string[] {
         return this.leaves;
     }
 
+    /**
+     * @returns Merkle root
+     */
     getRoot(): string {
         return this.root;
     }
 
+    /**
+     * @returns Merkle tree's layer
+     */
     getLayers(): Array<string[]> {
         return this.layers;
     }
 }
 
+/**
+ * @param csvData csv file as Buffer
+ * @returns Merkle leaves
+ */
 export function csvToLeaves(csvData: Buffer): Promise<string[]> {
     return new Promise(resolve => {
         parse(csvData, {delimiter: ','}, (err, data) => {
@@ -115,9 +146,13 @@ export function csvToLeaves(csvData: Buffer): Promise<string[]> {
                 const idx = i.toString(16);
                 const address = data[i][0].replace('0x', '');
                 const amount = BigNumber(data[i][1]).toString(16);
-                // 256bits + 160bits + 256bits
-                // raw : (idx, address, amount)
-                let raw = zeroPadding(idx, 64) + address + zeroPadding(amount, 64);
+
+                /**
+                 * raw is hexadecimal string, fixed length(256bits + 160bits + 256bits)
+                 * raw = (idx, address, amount)
+                 */
+                let raw = zeroPadding(idx) + address + zeroPadding(amount);
+
                 // leaf : keccak256(raw)
                 let leaf = keccak256(Buffer.from(raw, 'hex')).toString('hex');
                 leaves.push(leaf);
@@ -127,10 +162,14 @@ export function csvToLeaves(csvData: Buffer): Promise<string[]> {
     })
 }
 
-export function zeroPadding(num: string, len: number): string {
+/**
+ * @param num non-zero padded hexadecimal
+ * @returns zero padded hexadecimal as string
+ */
+export function zeroPadding(num: string): string {
     const zero32 = '0000000000000000000000000000000000000000000000000000000000000000'
-    if(num.length < len) {
-        return num = (zero32 + num).slice(-len);
+    if(num.length < 64) {
+        return num = (zero32 + num).slice(-64);
     } else return num;
 }
 
