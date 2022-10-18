@@ -58,16 +58,16 @@ export class MerkleTree {
      * @description Calculate merkle proof using recursive function
      */
     private calculateProof(hash: string, layer: number, proof: string[]) {
-        hash.replace('0x', '');
+        let _hash = hash.replace('0x', '');
         let length = this.layers[layer].length;
         if(length == 1) return proof;
 
-        let idx = this.layers[layer].indexOf(hash);
+        let idx = this.layers[layer].indexOf(_hash);
         if(idx == -1) return [];
 
         if(length % 2 && idx == length - 1) {
             layer++
-            proof = this.calculateProof(hash, layer, proof);
+            proof = this.calculateProof(_hash, layer, proof);
         } else {
             const neighborIdx = idx % 2 ? idx - 1 : idx + 1;
             proof.push(this.layers[layer][neighborIdx]);
@@ -86,13 +86,21 @@ export class MerkleTree {
      * @returns bool
      */
     verify(proof: string[], root: string, leaf: string): boolean {
-        let nextHash = leaf;
-        for(let i = 0; i < proof.length; i++) {
+        let _root = root.replace("0x", "");
+        let _leaf = leaf.replace("0x", "");
+
+        let _proof = proof.map((hash) => {
+            return hash.replace("0x", "");
+        });
+
+        let nextHash = _leaf;
+        for(let i = 0; i < _proof.length; i++) {
             // openzeppelin's merkle proof library need pair sort
-            let raw = [nextHash, proof[i]].sort();
+            let raw = [nextHash, _proof[i]].sort();
+            
             nextHash = keccak256(Buffer.from(raw[0] + raw[1], 'hex')).toString('hex');
         }
-        return nextHash == root ? true : false;
+        return nextHash == _root ? true : false;
     }
 
     /**
@@ -103,8 +111,8 @@ export class MerkleTree {
         let proof: string[] = [];
 
         if (typeof leaf === "string") {
-            leaf.replace('0x', '');
-            proof = this.calculateProof(leaf, 0, proof);
+            let _leaf = leaf.replace('0x', '');
+            proof = this.calculateProof(_leaf, 0, proof);
         } else {
             proof = this.calculateProof(this.leaves[leaf], 0, proof);
         }
@@ -134,6 +142,10 @@ export class MerkleTree {
      */
     getTree(): string {
         return treeify.asTree(this.treeObj, false, false);
+    }
+
+    getLeaf(index: number): string {
+        return "0x" + this.leaves[index];
     }
 
     /**
