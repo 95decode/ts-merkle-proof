@@ -58,6 +58,7 @@ export class MerkleTree {
      * @description Calculate merkle proof using recursive function
      */
     private calculateProof(hash: string, layer: number, proof: string[]) {
+        hash.replace('0x', '');
         let length = this.layers[layer].length;
         if(length == 1) return proof;
 
@@ -95,13 +96,37 @@ export class MerkleTree {
     }
 
     /**
-     * @param leaf 1 of Merkle tree's leaves
+     * @param leaf 1 of Merkle tree's leaves or index number
      * @returns Merkle proof as array of keccak256 hashes string
      */
-    getProof(leaf: string): string[] {
+    getProof(leaf: string | number): string[] {
         let proof: string[] = [];
-        proof = this.calculateProof(leaf, 0, proof);
-        return proof;
+
+        if (typeof leaf === "string") {
+            leaf.replace('0x', '');
+            proof = this.calculateProof(leaf, 0, proof);
+        } else {
+            proof = this.calculateProof(this.leaves[leaf], 0, proof);
+        }
+        return proof.map((hash) => {
+            return "0x" + hash;
+        });
+    }
+
+    /**
+     * @returns All merkle proofs 
+     */
+    getAllProof(): Array<object> {
+
+        let proofs = [];
+
+        for(let i = 0; i < this.leaves.length; i++) {
+            let leaf = this.leaves[i];
+            proofs.push({
+                ["0x" + leaf]: this.getProof(leaf)
+            })
+        }
+        return proofs;
     }
 
     /**
@@ -115,21 +140,27 @@ export class MerkleTree {
      * @returns Merkle tree's leaves
      */
     getLeaves(): string[] {
-        return this.leaves;
+        return this.leaves.map((hash) => {
+            return "0x" + hash;
+        });
     }
 
     /**
      * @returns Merkle root
      */
     getRoot(): string {
-        return this.root;
+        return "0x" + this.root;
     }
 
     /**
      * @returns Merkle tree's layer
      */
     getLayers(): Array<string[]> {
-        return this.layers;
+        return this.layers.map((layer) => {
+            return layer.map((hash) => {
+                return "0x" + hash;
+            })
+        });
     }
 }
 
